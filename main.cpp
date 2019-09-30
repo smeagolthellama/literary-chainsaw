@@ -11,16 +11,18 @@
 #define DEBUG 0
 #endif // DEBUG
 
+static int mod=100;
+
 using namespace std;
 
-typedef map<char,map<char, int> > char_map;
+typedef map<unsigned char,map<unsigned char, int> > char_map;
 
 static bool debug=DEBUG;
 
 void read_file(istream& in,char_map& m);
 void print_char_map(ostream& out, char_map& m);
-char find_next_char(char_map m, char c, int k);
-bool access(char_map m,char i, char j);
+unsigned char find_next_char(char_map m, unsigned char c, int k);
+bool access(char_map m,unsigned char i, unsigned char j);
 
 int main(int argc,char** argv)
 {
@@ -36,7 +38,7 @@ int main(int argc,char** argv)
 	if(file) {
 		n=static_cast<int>(strtol(argv[i++],nullptr,10));///if we don't get a number with something tacked on the end, we ignore it.
 		if(n==0) {
-			cerr<<"Please provide a valid number as the first parameter. Treating it a  file instead, and using 10 as the number.";
+			cerr<<"Please provide a valid number as the first parameter. Treating it a  file instead, and using 10 as the number.\n";
 			i--;
 			n=10;
 		}
@@ -77,9 +79,9 @@ int main(int argc,char** argv)
 	srand(static_cast<unsigned int>(time(nullptr))); ///incompatible with c++98, but who cares?
 
 	for(int _=0; _<n; _++) { /// perl ftw!
-		char c=0;
+		unsigned char c=0;
 		do {
-			c=find_next_char(m,c,rand()%1000);/// hopefully big enough, but not too big.
+			c=find_next_char(m,c,static_cast<int>(rand())%mod);/// hopefully big enough, but not too big.
 			//if(isprint(c))
 			cout<<c;
 
@@ -108,14 +110,14 @@ void read_file(istream& in, char_map& m)
 
 void print_char_map(ostream& out,char_map& m)
 {
-	char i,j;
-	for(i=0; i<CHAR_MAX; i++) {
+	unsigned char i,j;
+	for(i=0; i<UCHAR_MAX; i++) {
 		if(m.find(i)==m.end()) {
-			for(j=0; j<CHAR_MAX; j++) {
+			for(j=0; j<UCHAR_MAX; j++) {
 				out<<0<<' ';
 			}
 		} else {
-			for(j=0; j<CHAR_MAX; j++) {
+			for(j=0; j<UCHAR_MAX; j++) {
 				if(m[i].find(j)==m[i].end()) {
 					out<<0<<' ';
 				} else {
@@ -127,7 +129,7 @@ void print_char_map(ostream& out,char_map& m)
 	}
 }
 
-bool access(char_map m, char i, char j)
+bool access(char_map m, unsigned char i, unsigned char j)
 {
 	if(debug) {
 		cerr<<"access called for i='"<<i<<"', j='"<<j<<"':";
@@ -150,20 +152,22 @@ bool access(char_map m, char i, char j)
 	return 1;
 }
 
-char find_next_char(char_map m, char c, int k)
+unsigned char find_next_char(char_map m, unsigned char c, int k)
 {
+	int rounds;
 	if(debug) {
 		cerr<<"find_next_char called for c='"<<c<<"', k="<<k<<endl;
 	}
-	char j=0;
+	unsigned char j=0;
 	if(m.find(c)==m.end()) {
 		if(debug) {
 			cerr<<"no such c, returning \\0\n";
 		}
 		return 0;
 	}
+	rounds=0;
 	while(k>0) {
-		for(j=0; j<CHAR_MAX && k>0; j++) {
+		for(j=0; j<UCHAR_MAX && k>0; j++) {
 			if(access(m,c,j)) {
 				k-=m[c][j];
 				if(debug) {
@@ -171,9 +175,18 @@ char find_next_char(char_map m, char c, int k)
 				}
 			}
 		}
+		rounds++;
 		j--;
 	}
+	if(rounds==1){
+		mod*=1.5;
+	}else{
+		if(rounds>10){
+			mod/=2;
+		}
+	}
 	if(debug) {
+		cerr<<"mod is now "<<mod<<endl;
 		cerr<<"find_next_char returned '"<<j<<"'\n";
 	}
 	return j;
